@@ -5,3 +5,5 @@ App for telecomms to survey the bluetooth environment, meaning that it can take 
 the user can use a google maps activity to see the device history in different locations.
 
 
+
+
