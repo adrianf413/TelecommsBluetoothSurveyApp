@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -17,25 +18,21 @@ import java.util.Date;
 import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
+    String devicename;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        String device1 = getbtdevices();
-
         //Write to database for test on startup
         FirebaseDatabase database = FirebaseDatabase.getInstance();
-        DatabaseReference myRef = database.getReference("App-Start-up");
+        devicename = getDeviceName();
+        DatabaseReference myRef = database.getReference(devicename);
         SimpleDateFormat formatter= new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
         Date date = new Date(System.currentTimeMillis());
         String startValue = "Started at: " + formatter.format(date);
-        myRef.child("StartTimes").push().setValue(startValue);
-        myRef.child("devices").push().setValue(device1);
-
-        DatabaseReference mysecondRef = database.getReference("Second-up");
-        mysecondRef.setValue("Hello world");
+        myRef.child("App Start Times").push().setValue(startValue);
 
         //Start the background service
         startService(new Intent(this, BTScanService.class));
@@ -62,29 +59,28 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    public String getbtdevices(){
-        int REQUEST_BLUETOOTH = 1;
-        System.out.println("Getting bluetooth devices");
-        BluetoothAdapter BTAdapter = BluetoothAdapter.getDefaultAdapter();
 
-        if (!BTAdapter.isEnabled()) {
-            Intent enableBT = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableBT, REQUEST_BLUETOOTH);
+    public String getDeviceName() {
+        String manufacturer = Build.MANUFACTURER;
+        String model = Build.MODEL;
+        if (model.startsWith(manufacturer)) {
+            return capitalize(model);
+        } else {
+            return capitalize(manufacturer) + " " + model;
         }
-
-        //ArrayList<> deviceItemList = new ArrayList<DeviceItem>();
-
-        Set<BluetoothDevice> pairedDevices = BTAdapter.getBondedDevices();
-        if (pairedDevices.size() > 0) {
-            for (BluetoothDevice device : pairedDevices) {
-                System.out.println("\n\n\n");
-                System.out.println(device.getName());
-                System.out.println("\n\n\n");
-                return device.getName();
-                //DeviceItem newDevice= new DeviceItem(device.getName(),device.getAddress(),"false");
-                //deviceItemList.add(newDevice);
-            }
-        }
-        return null;
     }
+
+
+    private String capitalize(String s) {
+        if (s == null || s.length() == 0) {
+            return "";
+        }
+        char first = s.charAt(0);
+        if (Character.isUpperCase(first)) {
+            return s;
+        } else {
+            return Character.toUpperCase(first) + s.substring(1);
+        }
+    }
+
 }

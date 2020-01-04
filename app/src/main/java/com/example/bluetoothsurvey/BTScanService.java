@@ -7,6 +7,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.location.Location;
+import android.os.Build;
 import android.os.IBinder;
 
 import com.google.firebase.database.DatabaseReference;
@@ -19,85 +21,96 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class BTScanService extends Service {
-    ArrayList<BluetoothDeviceObject> devices;
+    ArrayList<BluetoothDeviceObject> deviceList = new ArrayList<>();
+
+    FirebaseDatabase database = FirebaseDatabase.getInstance();
+    DatabaseReference myRef = database.getReference(this.getDeviceName());
+
+    ArrayList<BluetoothDeviceObject> arrayOfFoundBTDevices = new ArrayList<>();
+    //BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
+    int device_number;
+    int iteration =0;
+
     @Override
     public void onCreate() {
-        devices = getListOfFoundDevices();
 
-        FirebaseDatabase database = FirebaseDatabase.getInstance();
-        DatabaseReference myRef = database.getReference("App-Start-up");
+        //devices = arrayOfFoundBTDevices;
         SimpleDateFormat formatter= new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
         Date date = new Date(System.currentTimeMillis());
         String startValue = "Started at: " + formatter.format(date);
-        myRef.child("StartTimes").push().setValue(startValue);
-        myRef.child("ScannedDevices").push().setValue(devices);
-        //scan_and_push();
+        myRef.child("Service Start Times").push().setValue(startValue);
+
+        scan_and_push();
     }
 
     public void scan_and_push(){
         int delay = 15; // The delay in minutes
+
         Timer timer = new Timer();
         timer.schedule(new TimerTask() {
             @Override
             public void run() { // Function runs every MINUTES minutes.
 
+                //start discovery
+                BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+                mBluetoothAdapter.startDiscovery();
+
+                // Register for broadcasts when a device is discovered.
+                IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+                registerReceiver(receiver, filter);
+
+                if(deviceList.isEmpty()){
+                    myRef.child("List Debug").push().setValue("List EMPTY");
+                    int lat= 0;
+                    int longitude = 0;
+                    LocationData datapoint = new LocationData(lat, longitude, 0);
+                }else{
+
+                    myRef.child("List Debug").push().setValue("List NOT EMPTY");
+                    myRef.child("Number of devices").push().setValue(deviceList.size());
+                    for (Object device : deviceList) {
+                        myRef.child("Device Objects").child(String.valueOf(iteration)).push().setValue(device);
+                    }
+                    iteration = iteration+1;
+                    deviceList.removeAll(deviceList);
+                }
+
+                //unregister
+                //unregisterReceiver(receiver);
             }
-        }, 0, 1000 * 60 * delay);
+        }, 0, 1000 * 60 * 1/2);
         // 1000 milliseconds in a second * 60 per minute * the MINUTES variable.
     }
 
-    public ArrayList getListOfFoundDevices()
-    {
-        final ArrayList<BluetoothDeviceObject> arrayOfFoundBTDevices = new ArrayList<>();
 
-        // start looking for bluetooth devices
-        BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        mBluetoothAdapter.startDiscovery();
+    // Create a BroadcastReceiver for ACTION_FOUND.
+    private final BroadcastReceiver receiver = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                // Discovery has found a device. Get the BluetoothDevice
+                // object and its info from the Intent.
+                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                String deviceName = device.getName();
+                String deviceHardwareAddress = device.getAddress(); // MAC address
 
-        // Discover new devices
-        // Create a BroadcastReceiver for ACTION_FOUND
-        final BroadcastReceiver mReceiver = new BroadcastReceiver()
-        {
-            @Override
-            public void onReceive(Context context, Intent intent)
-            {
-                String action = intent.getAction();
-                // When discovery finds a device
-                if (BluetoothDevice.ACTION_FOUND.equals(action))
-                {
-                    // Get the bluetoothDevice object from the Intent
-                    BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                // create a bluetooth object from the info
+                BluetoothDeviceObject deviceFound = new BluetoothDeviceObject();
+                deviceFound.setName(device.getName());
+                deviceFound.setAddress(device.getAddress());
 
-                    // Get the "RSSI" to get the signal strength as integer,
-                    // but should be displayed in "dBm" units
-                    int rssi = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI,Short.MIN_VALUE);
-
-                    // Create the device object and add it to the arrayList of devices
-                    BluetoothDeviceObject bluetoothObject = new BluetoothDeviceObject();
-                    bluetoothObject.setName(device.getName());
-                    bluetoothObject.setAddress(device.getAddress());
-                    /*
-                    bluetoothObject.setBluetooth_state(device.getBondState());
-                    bluetoothObject.setBluetooth_type(device.getType());    // requires API 18 or higher
-                    bluetoothObject.setBluetooth_uuids(device.getUuids());
-                    bluetoothObject.setBluetooth_rssi(rssi);
-                    */
-                    arrayOfFoundBTDevices.add(bluetoothObject);
-                    /*
-                    // 1. Pass context and data to the custom adapter
-                    FoundBTDevicesAdapter adapter = new FoundBTDevicesAdapter(getApplicationContext(), arrayOfFoundBTDevices);
-
-                    // 2. setListAdapter
-                    setListAdapter(adapter);
-                    */
+                //add object to the array of devices found
+                myRef.child("DevicesFound").push().setValue(deviceName);
+                if(deviceList.contains(deviceFound)){
+                    //device already found in list
+                }
+                else{
+                    deviceList.add(deviceFound);
                 }
             }
-        };
-        // Register the BroadcastReceiver
-        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-        registerReceiver(mReceiver, filter);
-        return arrayOfFoundBTDevices;
-    }
+        }
+    };
 
     @Override
     public void onStart(Intent intent, int startId) {
@@ -116,5 +129,28 @@ public class BTScanService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return null;
+    }
+
+    public String getDeviceName() {
+        String manufacturer = Build.MANUFACTURER;
+        String model = Build.MODEL;
+        if (model.startsWith(manufacturer)) {
+            return capitalize(model);
+        } else {
+            return capitalize(manufacturer) + " " + model;
+        }
+    }
+
+
+    private String capitalize(String s) {
+        if (s == null || s.length() == 0) {
+            return "";
+        }
+        char first = s.charAt(0);
+        if (Character.isUpperCase(first)) {
+            return s;
+        } else {
+            return Character.toUpperCase(first) + s.substring(1);
+        }
     }
 }
