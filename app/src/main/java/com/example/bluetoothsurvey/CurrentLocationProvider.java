@@ -17,6 +17,15 @@ public class CurrentLocationProvider implements LocationListener {
     protected boolean gps_enabled,network_enabled;
     double nlatitude, nlongitude;
 
+    public CurrentLocationProvider(){
+
+
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        try {
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+        }catch(SecurityException e){}
+
+    }
 
     @Override
     public void onLocationChanged(Location location) {

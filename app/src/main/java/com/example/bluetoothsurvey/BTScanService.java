@@ -29,6 +29,8 @@ public class BTScanService extends Service {
     ArrayList<BluetoothDeviceObject> arrayOfFoundBTDevices = new ArrayList<>();
     //BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
+    CurrentLocationProvider current_location = new CurrentLocationProvider();
+
     int device_number;
     int iteration =0;
 
@@ -62,9 +64,10 @@ public class BTScanService extends Service {
 
                 if(deviceList.isEmpty()){
                     myRef.child("List Debug").push().setValue("List EMPTY");
-                    int lat= 0;
-                    int longitude = 0;
+                    double lat= current_location.getNlatitude();
+                    double longitude = current_location.getNlongitude();
                     LocationData datapoint = new LocationData(lat, longitude, 0);
+                    myRef.child("Location Data Points").push().setValue(datapoint);
                 }else{
 
                     myRef.child("List Debug").push().setValue("List NOT EMPTY");
