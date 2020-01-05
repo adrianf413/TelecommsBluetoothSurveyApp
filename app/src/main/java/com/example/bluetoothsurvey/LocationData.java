@@ -1,6 +1,7 @@
 package com.example.bluetoothsurvey;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -11,7 +12,7 @@ public class LocationData {
     public long timestamp;
     public Date date;
     public String datetime;
-    public List devices_found;
+    public ArrayList<BluetoothDeviceObject> devices_found;
     public int num_devices;
 
     public LocationData(){
@@ -30,7 +31,23 @@ public class LocationData {
         this.datetime = (formatter.format(date));
     }
 
-    public List getDevicesList(){
+    public void setDevices_found(ArrayList<BluetoothDeviceObject> devices_found){
+        this.devices_found = devices_found;
+    }
+    public ArrayList<BluetoothDeviceObject> getDevicesList(){
+
         return devices_found;
+    }
+
+    public double getLatitude(){
+        return this.latitude;
+    }
+
+    public double getLongitude(){
+        return this.longitude;
+    }
+
+    public int getNum_devices(){
+        return this.num_devices;
     }
 }

@@ -1,5 +1,6 @@
 package com.example.bluetoothsurvey;
 
+import android.Manifest;
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -7,10 +8,15 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.IBinder;
 
+import com.google.android.gms.maps.model.LatLng;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -29,19 +35,64 @@ public class BTScanService extends Service {
     ArrayList<BluetoothDeviceObject> arrayOfFoundBTDevices = new ArrayList<>();
     //BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
-    CurrentLocationProvider current_location = new CurrentLocationProvider();
+
+    LocationManager locationManager;
+    LocationListener locationListener;
 
     int device_number;
-    int iteration =0;
+    int iteration = 0;
+
+    public double latitude;
+    public double longitude;
 
     @Override
     public void onCreate() {
 
         //devices = arrayOfFoundBTDevices;
-        SimpleDateFormat formatter= new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
         Date date = new Date(System.currentTimeMillis());
         String startValue = "Started at: " + formatter.format(date);
         myRef.child("Service Start Times").push().setValue(startValue);
+
+        //create location manager
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        locationListener = new LocationListener() {
+
+            @Override
+            public void onLocationChanged(Location location) {
+                latitude = location.getLatitude();
+                longitude = location.getLongitude();
+            }
+
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+
+            }
+
+            @Override
+            public void onProviderEnabled(String provider) {
+
+            }
+
+            @Override
+            public void onProviderDisabled(String provider) {
+
+            }
+        };
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                // TODO: Consider calling
+                //    Activity#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for Activity#requestPermissions for more details.
+                return;
+            }
+        }
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 0, locationListener);
+
 
         scan_and_push();
     }
@@ -62,18 +113,26 @@ public class BTScanService extends Service {
                 IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
                 registerReceiver(receiver, filter);
 
+                try {
+                    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 0, locationListener);
+                }catch(SecurityException e){}
+
                 if(deviceList.isEmpty()){
-                    myRef.child("List Debug").push().setValue("List EMPTY");
-                    double lat= current_location.getNlatitude();
-                    double longitude = current_location.getNlongitude();
-                    LocationData datapoint = new LocationData(lat, longitude, 0);
+                    //myRef.child("List Debug").push().setValue("List EMPTY");
+
+                    LocationData datapoint = new LocationData(latitude, longitude, 0);
                     myRef.child("Location Data Points").push().setValue(datapoint);
                 }else{
 
-                    myRef.child("List Debug").push().setValue("List NOT EMPTY");
-                    myRef.child("Number of devices").push().setValue(deviceList.size());
+                    //myRef.child("List Debug").push().setValue("List NOT EMPTY");
+                    //myRef.child("Number of devices").push().setValue(deviceList.size());
+
+                    LocationData datapoint = new LocationData(latitude, longitude, deviceList.size());
+                    datapoint.setDevices_found(deviceList);
+                    myRef.child("Locations").push().setValue(datapoint);
+
                     for (Object device : deviceList) {
-                        myRef.child("Device Objects").child(String.valueOf(iteration)).push().setValue(device);
+                        //myRef.child("Device Objects").child(String.valueOf(iteration)).push().setValue(device);
                     }
                     iteration = iteration+1;
                     deviceList.removeAll(deviceList);
@@ -104,11 +163,9 @@ public class BTScanService extends Service {
                 deviceFound.setAddress(device.getAddress());
 
                 //add object to the array of devices found
-                myRef.child("DevicesFound").push().setValue(deviceName);
-                if(deviceList.contains(deviceFound)){
-                    //device already found in list
-                }
-                else{
+                //myRef.child("DevicesFound").push().setValue(deviceName);
+                if(!deviceList.contains(deviceFound)) {
+                    //checking for duplication
                     deviceList.add(deviceFound);
                 }
             }
@@ -133,6 +190,7 @@ public class BTScanService extends Service {
     public IBinder onBind(Intent intent) {
         return null;
     }
+
 
     public String getDeviceName() {
         String manufacturer = Build.MANUFACTURER;

@@ -30,7 +30,8 @@ public class BluetoothDeviceObject {
 
         if (object != null && object instanceof BluetoothDeviceObject)
         {
-            isEqual = (this.name == ((BluetoothDeviceObject) object).name);
+            isEqual = (this.name == ((BluetoothDeviceObject) object).name) ||
+                    (this.address == ((BluetoothDeviceObject)object).address);
         }
 
         return isEqual;
