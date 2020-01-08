@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "1042821408103",
+    "firebase_url": "https://tsabluetoothsurveyapp.firebaseio.com",
+    "project_id": "tsabluetoothsurveyapp",
+    "storage_bucket": "tsabluetoothsurveyapp.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1042821408103:android:e5e85b300c1fd66bcabbc2",
+        "android_client_info": {
+          "package_name": "com.example.bluetoothsurvey"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1042821408103-i6b0hut83s2sc05kep6iee2r7457nevf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCSA3oHaOVRnNd5IxS6caxChbWkLkF7pYQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1042821408103-i6b0hut83s2sc05kep6iee2r7457nevf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
