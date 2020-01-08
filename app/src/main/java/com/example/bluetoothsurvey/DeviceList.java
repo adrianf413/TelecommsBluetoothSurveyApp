@@ -38,28 +38,16 @@ public class DeviceList extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_device_list);
 
-
-
-
-
-        String[] values = new String[] { "Android", "iPhone", "WindowsMobile",
-                "Blackberry", "WebOS", "Ubuntu", "Windows7", "Max OS X",
-                "Linux", "OS/2", "Ubuntu", "Windows7", "Max OS X", "Linux",
-                "OS/2", "Ubuntu", "Windows7", "Max OS X", "Linux", "OS/2",
-                "Android", "iPhone", "WindowsMobile" };
-
-        /*
-        for (int i = 0; i < values.length; ++i) {
-            list.add(values[i]);
-        }*/
-
         list.add("");
+        //Creating the list adapter for the list view object
         adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, list);
 
+        //creating the list view object for the activity
         ListView listview;
         listview = (ListView) findViewById(R.id.list);
         listview.setAdapter(adapter);
 
+        //adding a listener to the database reference to read in the data
         reference.child("Locations").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
@@ -74,23 +62,17 @@ public class DeviceList extends AppCompatActivity {
 
                         devices = location_data.getDevicesList();
                         if(devices != null){
-                            //System.out.println(devices.get(0).name);
                             for(BluetoothDeviceObject device : devices) {
                                 if (device.name != null) {
                                     if(!list.contains(device.name + " : " +device.address)) {
                                         adapter.add(device.name + " : " + device.address);
                                     }
-                                    //adapter.add(device.name + ":" +device.address);
                                 } else {
 
                                     if(!list.contains("Unnamed Device" +" : " +  device.address)) {
-                                        //list.add("Unnamed Device" + ":" + device.address);
                                         adapter.add("Unnamed Device" +" : " +  device.address);
                                     }
-                                    //list.add("Unnamed Device" + ":" + device.address);
-                                    //adapter.add("Unnamed Device" +":" +  device.address);
                                 }
-                                //add_devices(device.name);
                             }
                         }
 
@@ -103,14 +85,6 @@ public class DeviceList extends AppCompatActivity {
 
             }
         });
-
-
-    }
-
-    public void add_devices(String name){
-        //list.add(name);
-        //adapter.notifyDataSetChanged();
-        adapter.add(name);
     }
 
 

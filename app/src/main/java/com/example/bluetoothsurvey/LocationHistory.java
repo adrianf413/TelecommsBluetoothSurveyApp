@@ -1,7 +1,12 @@
 package com.example.bluetoothsurvey;
 
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
@@ -30,7 +35,6 @@ public class LocationHistory extends FragmentActivity implements OnMapReadyCallb
     private GoogleMap mMap;
     private Marker markerLocation;
     public ArrayList<LocationData> datapoints = new ArrayList<>();
-    private boolean data_exists = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,25 +45,59 @@ public class LocationHistory extends FragmentActivity implements OnMapReadyCallb
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
+        // Make sure that the application has permission to get the users location
+        checkLocationPermission();
     }
+
+    //Method given in the android workshop
+    public boolean checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(this,
+                android.Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    android.Manifest.permission.ACCESS_FINE_LOCATION)) {
+
+                // Show an explanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+                new AlertDialog.Builder(this)
+                        .setTitle("Permission to access GPS")
+                        .setMessage("Please allow the app to access you location.")
+                        .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                //Prompt the user once explanation has been shown
+                                ActivityCompat.requestPermissions(LocationHistory.this,
+                                        new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
+                                        99);
+                            }
+                        })
+                        .create()
+                        .show();
+
+
+            } else {
+                // No explanation needed, we can request the permission.
+                ActivityCompat.requestPermissions(this,
+                        new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
+                        99);
+            }
+            return false;
+        } else {
+            return true;
+        }
+    }
+
 
     public void getData(){
         FirebaseDatabase database = FirebaseDatabase.getInstance();
-        String devicename = getDeviceName();
-        String reference_children = devicename + "/Location Data Points";
         DatabaseReference reference = database.getReference(this.getDeviceName());
-        DatabaseReference childRef = reference.child("Location Data Points");
-
-        //datapoints
 
         reference.child("Locations").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                if(dataSnapshot.exists()){
-                    data_exists = true;
-                }else{
-                    data_exists = true;
-                }
 
                 List<String> keys = new ArrayList<>();
 
@@ -68,15 +106,11 @@ public class LocationHistory extends FragmentActivity implements OnMapReadyCallb
 
                     if(dataSnapshot.exists()){
                         LocationData location_data = (ds.getValue(LocationData.class));
-                        //int devices = location_data.num_devices;
                         datapoints.add(location_data);
-                        //System.out.println("\n\n\n\n\n\n\n\n\n");
-                        //System.out.println(devices);
-                        //System.out.println(ds.getValue());
-                        //System.out.println(location_data.num_devices);
+
                         LatLng latlng = new LatLng(location_data.getLatitude(), location_data.getLongitude());
                         addMarker(latlng, String.valueOf(location_data.getNum_devices()));
-
+                        //adding data object read in from database to the list of objects
                         datapoints.add(location_data);
                     }
                 }
@@ -114,8 +148,6 @@ public class LocationHistory extends FragmentActivity implements OnMapReadyCallb
         DatabaseReference reference = database.getReference(this.getDeviceName());
         DatabaseReference childRef = reference.child("Location Data Points");
 
-        //datapoints = new ArrayList<>();
-
         reference.child("Locations").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
@@ -127,17 +159,13 @@ public class LocationHistory extends FragmentActivity implements OnMapReadyCallb
 
                     if(dataSnapshot.exists()){
                         LocationData location_data = (ds.getValue(LocationData.class));
-                        //int devices = location_data.num_devices;
                         datapoints.add(location_data);
-                        //System.out.println("\n\n\n\n\n\n\n\n\n");
-                        //System.out.println(devices);
-                        //System.out.println(ds.getValue());
-                        //System.out.println(location_data.num_devices);
+
                         LatLng latlng = new LatLng(location_data.getLatitude(), location_data.getLongitude());
                         String message = "Devices:" + String.valueOf(location_data.getNum_devices());
-                        //message = message + "\n" + location_data.datetime;
+                        //adding marker for this object to the map
                         addMarker(latlng, message);
-
+                        //adding to list of objects
                         datapoints.add(location_data);
                     }
                 }
@@ -181,16 +209,7 @@ public class LocationHistory extends FragmentActivity implements OnMapReadyCallb
         markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE));
         if (mMap != null)
             markerLocation = mMap.addMarker(markerOptions);
-
-        /*
-        CameraPosition cameraPosition = new CameraPosition.Builder()
-                .target(new LatLng(latLng.latitude, latLng.longitude))
-                .zoom(10)
-                .build();
-
-        if (mMap != null)
-            mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-    */
+        
     }
 
 

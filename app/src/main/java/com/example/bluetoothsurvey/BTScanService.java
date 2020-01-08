@@ -80,14 +80,7 @@ public class BTScanService extends Service {
         };
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                // TODO: Consider calling
-                //    Activity#requestPermissions
-                // here to request the missing permissions, and then overriding
-                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                //                                          int[] grantResults)
-                // to handle the case where the user grants the permission. See the documentation
-                // for Activity#requestPermissions for more details.
-                return;
+                //Permission will be asked in the Location History activity
             }
         }
         locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 0, locationListener);
@@ -117,28 +110,19 @@ public class BTScanService extends Service {
                 }catch(SecurityException e){}
 
                 if(deviceList.isEmpty()){
-                    //myRef.child("List Debug").push().setValue("List EMPTY");
-
+                    //No devices detected in this iteration, push object with 0 devices.
                     LocationData datapoint = new LocationData(latitude, longitude, 0);
                     myRef.child("Locations").push().setValue(datapoint);
                 }else{
-
-                    //myRef.child("List Debug").push().setValue("List NOT EMPTY");
-                    //myRef.child("Number of devices").push().setValue(deviceList.size());
-
+                    //Push location data object to database with devices detected
                     LocationData datapoint = new LocationData(latitude, longitude, deviceList.size());
                     datapoint.setDevices_found(deviceList);
                     myRef.child("Locations").push().setValue(datapoint);
 
-                    for (Object device : deviceList) {
-                        //myRef.child("Device Objects").child(String.valueOf(iteration)).push().setValue(device);
-                    }
-                    iteration = iteration+1;
+                    //Clearing the device list for the next iteration
                     deviceList.removeAll(deviceList);
                 }
 
-                //unregister
-                //unregisterReceiver(receiver);
             }
         }, 0, 1000 * 60 * delay);
         // 1000 milliseconds in a second * 60 per minute * the MINUTES variable.
@@ -153,8 +137,6 @@ public class BTScanService extends Service {
                 // Discovery has found a device. Get the BluetoothDevice
                 // object and its info from the Intent.
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                String deviceName = device.getName();
-                String deviceHardwareAddress = device.getAddress(); // MAC address
 
                 // create a bluetooth object from the info
                 BluetoothDeviceObject deviceFound = new BluetoothDeviceObject();
@@ -175,15 +157,6 @@ public class BTScanService extends Service {
     public void onStart(Intent intent, int startId) {
         //do something
     }
-
-    /*
-    @Override
-    protected void onPause()
-    {
-        super.onPause();
-
-        mBluetoothAdapter.cancelDiscovery();
-    }*/
 
     @Override
     public IBinder onBind(Intent intent) {
