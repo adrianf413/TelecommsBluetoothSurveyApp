@@ -33,7 +33,6 @@ public class BTScanService extends Service {
     DatabaseReference myRef = database.getReference(this.getDeviceName());
 
     ArrayList<BluetoothDeviceObject> arrayOfFoundBTDevices = new ArrayList<>();
-    //BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
 
     LocationManager locationManager;
@@ -121,7 +120,7 @@ public class BTScanService extends Service {
                     //myRef.child("List Debug").push().setValue("List EMPTY");
 
                     LocationData datapoint = new LocationData(latitude, longitude, 0);
-                    myRef.child("Location Data Points").push().setValue(datapoint);
+                    myRef.child("Locations").push().setValue(datapoint);
                 }else{
 
                     //myRef.child("List Debug").push().setValue("List NOT EMPTY");
@@ -141,7 +140,7 @@ public class BTScanService extends Service {
                 //unregister
                 //unregisterReceiver(receiver);
             }
-        }, 0, 1000 * 60 * 1/2);
+        }, 0, 1000 * 60 * delay);
         // 1000 milliseconds in a second * 60 per minute * the MINUTES variable.
     }
 

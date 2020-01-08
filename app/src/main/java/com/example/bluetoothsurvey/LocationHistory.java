@@ -103,9 +103,9 @@ public class LocationHistory extends FragmentActivity implements OnMapReadyCallb
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(53.283912, -9.063874);
+        LatLng sydney = new LatLng(52.852412, -8.961374);
         //mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Engineering Building"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(sydney, 8));
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(sydney, 11));
 
 
         FirebaseDatabase database = FirebaseDatabase.getInstance();
@@ -119,11 +119,6 @@ public class LocationHistory extends FragmentActivity implements OnMapReadyCallb
         reference.child("Locations").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                if(dataSnapshot.exists()){
-                    data_exists = true;
-                }else{
-                    data_exists = true;
-                }
 
                 List<String> keys = new ArrayList<>();
 
@@ -140,7 +135,7 @@ public class LocationHistory extends FragmentActivity implements OnMapReadyCallb
                         //System.out.println(location_data.num_devices);
                         LatLng latlng = new LatLng(location_data.getLatitude(), location_data.getLongitude());
                         String message = "Devices:" + String.valueOf(location_data.getNum_devices());
-                        message = message + "\n" + location_data.datetime;
+                        //message = message + "\n" + location_data.datetime;
                         addMarker(latlng, message);
 
                         datapoints.add(location_data);
@@ -160,9 +155,6 @@ public class LocationHistory extends FragmentActivity implements OnMapReadyCallb
                 LatLng latLng = new LatLng(datapoint.getLatitude(), datapoint.getLongitude());
                 addMarker(latLng, String.valueOf(datapoint.getNum_devices()));
             }
-        }else{
-            LatLng latLng = new LatLng(52.9455563, -8.9227235);
-            addMarker(latLng, "No devices Found");
         }
 
         final Button backButton = (Button) findViewById(R.id.BackButton);
